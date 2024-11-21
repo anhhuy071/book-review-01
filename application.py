@@ -2,36 +2,21 @@ import os, requests
 
 from flask import Flask, session, render_template, redirect, request, url_for, jsonify
 from flask_session import Session
-# from flask_wtf import FlaskForm
-# from wtforms import StringField, PasswordField, SubmitField
-# from wtforms.validators import InputRequired, Email, Length, EqualTo
-from werkzeug.security import generate_password_hash
 from sqlalchemy import create_engine ,text
 from sqlalchemy.orm import scoped_session, sessionmaker
 from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.exc import SQLAlchemyError
 
-from dotenv import load_dotenv  #add dotenv load environment
+from dotenv import load_dotenv  
 load_dotenv() 
 
 app = Flask(__name__)
 
-# class RegistrationForm(FlaskForm):
-#     first_name = StringField('First Name', validators=[InputRequired()])
-#     last_name = StringField('Last Name', validators=[InputRequired()])
-#     email = StringField('E-mail', validators=[InputRequired(), Email()])
-#     password1 = PasswordField('Password', validators=[InputRequired(), Length(min=8), EqualTo('password2', message='Passwords must match')])
-#     password2 = PasswordField('Confirm password', validators=[InputRequired()])
-#     submit = SubmitField('Register')
 
-# Check for environment variable
 if not os.getenv("DATABASE_URL"):
     raise RuntimeError("DATABASE_URL is not set")
-# elif not os.getenv("KEY"):
-#     raise RuntimeError("API KEY is not set")
 
-# Configure session to use filesystem
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
@@ -39,16 +24,11 @@ Session(app)
 
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
-# key = os.getenv("KEY")
-# app.config['SECRET_KEY'] = os.urandom(24)
 
 ## Helper
-def login_required(f):
-    """
-    Decorate routes to require login.
 
-    http://flask.pocoo.org/docs/0.12/patterns/viewdecorators/
-    """
+# Đây là decorator là functions thay đổi tính năng của một function một cách dynamic
+def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("email") is None:
@@ -65,12 +45,8 @@ def index():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    # if GET, show the registration form
     if request.method == "GET":
         return render_template("register.html")
-
-    # if POST, validate and commit to database
-
     else:
         #if form values are empty show error
         if not request.form.get("first_name"):
@@ -83,19 +59,16 @@ def register():
             return render_template("error.html", message="Must provide password")
         elif request.form.get("password1") != request.form.get("password2"):
             return render_template("error.html", message="Password does not match")
-        ## end validation
+        # end validation
         else :
-            ## assign to variables
+            # assign to variables
             first_name = request.form.get("first_name")
             last_name = request.form.get("last_name")
             email = request.form.get("email")
             password = request.form.get("password1")
             # try to commit to database, raise error if any
             try:
-                db.execute(text("INSERT INTO users (firstname, lastname, email, password) VALUES (:firstname, :lastname, :email, :password)"
-                            ),
-                               {"firstname": first_name, "lastname": last_name, "email":email, "password": generate_password_hash(password)}        
-                )
+                db.execute(text("INSERT INTO users (firstname, lastname, email, password) VALUES (:firstname, :lastname, :email, :password)"),{"firstname": first_name, "lastname": last_name, "email":email, "password": generate_password_hash(password)} )
             except Exception as e:
                 return render_template("error.html", message=e)
             
@@ -103,9 +76,7 @@ def register():
             
             #success - redirect to login
             Q = db.execute(
-                text("SELECT * FROM users WHERE email LIKE :email"),
-                {"email": email},
-            ).fetchone()
+                text("SELECT * FROM users WHERE email LIKE :email"),{"email": email},).fetchone()
             print(Q.userid)
             # Remember which user has logged in
             session["user_id"] = Q.userid
@@ -213,25 +184,21 @@ def details(bookid):
 
         return render_template("details.html", result=result, comment_list=comment_list , bookid=bookid, openlib=openlibrary_ratings.json()['summary'], cover=cover, descriptions = openlib_descriptions)
     else:
-        ######## Check if the user commented on this particular book before ###########
+    
         user_reviewed_before = db.execute(text("SELECT * from reviews WHERE user_id = :user_id AND book_id = :book_id"),  {"user_id": session["user_id"], "book_id": bookid}).fetchone()
         if user_reviewed_before:
             return render_template("error.html", message = "You reviewed this book before!")
-        ######## Proceed to get user comment ###########
         user_comment = request.form.get("comments")
         user_rating = request.form.get("rating")
 
         if not user_comment:
             return render_template("error.html", message="Comment section cannot be empty")
 
-        # try to commit to database, raise error if any
         try:
-            db.execute(text("INSERT INTO reviews (user_id, book_id, rating, comment) VALUES (:user_id, :book_id, :rating, :comment)"),
-                           {"user_id": session["user_id"], "book_id": bookid, "rating":user_rating, "comment": user_comment})
+            db.execute(text("INSERT INTO reviews (user_id, book_id, rating, comment) VALUES (:user_id, :book_id, :rating, :comment)"),{"user_id": session["user_id"], "book_id": bookid, "rating":user_rating, "comment": user_comment})
         except Exception as e:
             return render_template("error.html", message=e)
 
-        #success - redirect to details page
         db.commit()
         return redirect(url_for("details", bookid=bookid))
 
@@ -241,7 +208,6 @@ def details(bookid):
 @app.route("/api/<string:isbn>")
 @login_required
 def api(isbn):
-    """Return details about a single book in json format"""
 
     # Make sure ISBN exists in the database
     try:
