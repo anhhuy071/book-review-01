@@ -7,24 +7,28 @@ This web site features 5000 hand picked books allowing users to search, leave re
 
 # Installation
 
-## Pre-requisites
+## Installation via Docker (Recommended)
+This project is fully containerized. You only need [Docker Desktop](https://www.docker.com/products/docker-desktop) installed on your machine.
 
-Make sure you have the following installed on your machine:
-* postgreSQL
-* Python 3.7.2
+1. Clone the repository and navigate into the project directory.
+2. Open your terminal and run the following command to start both the Web App and the Database:
+   ```bash
+   docker compose up -d --build
+   ```
+   *(Note: The database tables will be automatically created on the first run).*
+3. To populate the database with 5000 books from `books.csv`, run:
+   ```bash
+   docker compose exec web python import.py
+   ```
+4. Access the web application at `http://localhost:5000`.
 
-## Proceed to download
-1. Clone the repository
-2. In your terminal window, navigate into the project
-3. Run `pip3 install -r requirements.txt` to make sure all of the necessary Python packages (Flask, SQLAlchemy and others) are installed
-4. Set the environment variables:
-	  * `export FLASK_APP=application.py`. On Windows, the command is instead` set FLASK_APP=application.py`
-    - `KEY` = is your API key, will give you the review and rating data for the book with the provided ISBN number (register at goodreads.com)
-    - `DATABASE_URL` = URI for your local postgreSQL database (for example: `postgres://username:password@localhost:5432/databasename` )
-5. Run `tables.sql` against your database to create the necessary tables
-  ![Alt text](db-schema.png?raw=true "Title")
-6. Run `python3 import.py` to import a spreadsheet in CSV format of 5000 different books to your database
-7. Finally execute `flask run` command in your terminal to start the server
+## Manual Installation (Legacy)
+If you prefer not to use Docker, ensure you have PostgreSQL and Python installed:
+1. Run `uv pip install -r requirements.txt` (or `pip install -r requirements.txt`).
+2. Set the environment variables in a `.env` file or export them (`FLASK_APP=application.py`, `DATABASE_URL=...`).
+3. Run `tables.sql` against your database manually.
+4. Run `python import.py` to import books.
+5. Execute `flask run` to start the server.
 
 # Features of the applications
 

@@ -26,8 +26,6 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
 ## Helper
-
-# Đây là decorator là functions thay đổi tính năng của một function một cách dynamic
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

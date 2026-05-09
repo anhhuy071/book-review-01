@@ -3,7 +3,13 @@ import os,csv
 from sqlalchemy import create_engine , text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-engine = create_engine("postgresql://book_review_0wx8_user:Uaf6w33bDFMunyPC8dQa4DtSeYQiwhyJ@dpg-cmt29dgl6cac73aq8o7g-a.singapore-postgres.render.com/book_review_0wx8")
+from dotenv import load_dotenv
+load_dotenv()
+
+if not os.getenv("DATABASE_URL"):
+    raise RuntimeError("DATABASE_URL is not set")
+
+engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
 
