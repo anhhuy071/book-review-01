@@ -69,8 +69,8 @@ def register():
             # try to commit to database, raise error if any
             try:
                 db.execute(text("INSERT INTO users (firstname, lastname, email, password) VALUES (:firstname, :lastname, :email, :password)"),{"firstname": first_name, "lastname": last_name, "email":email, "password": generate_password_hash(password)} )
-            except Exception as e:
-                return render_template("error.html", message=e)
+            except Exception:
+                return render_template("error.html", message="An error occurred during registration. Email might already be registered.")
             
             db.commit()
             
@@ -145,8 +145,8 @@ def search():
             return render_template("error.html", message="Search field can not be empty!")
         try:
             result = db.execute(text('SELECT * FROM books WHERE LOWER(isbn) LIKE :query OR LOWER(title) LIKE :query OR LOWER(author) LIKE :query'), {"query": "%" + query.lower() + "%"}).fetchall()
-        except Exception as e:
-            return render_template("error.html", message=e)
+        except Exception:
+            return render_template("error.html", message="An error occurred while searching. Please try again.")
         if not result:
             return render_template("error.html", message="Your query did not match any documents")
         return render_template("list.html", result=result)
@@ -163,8 +163,8 @@ def details(bookid):
         try:
             #Check API to get 'works' key for putting it to a new link in order to get ratings count.
             openlib_details = requests.get(f"https://openlibrary.org/api/books?bibkeys=ISBN:{result.isbn}&jscmd=details&format=json")
-        except Exception as e:
-            return render_template("error.html", message = e)
+        except Exception:
+            return render_template("error.html", message="Error fetching book details from external API.")
         #Get 'works' key
         openlibrary_workskey = openlib_details.json()[f"ISBN:{result.isbn}"]["details"]['works'][0]['key']
         #Get ratings data
@@ -196,8 +196,8 @@ def details(bookid):
 
         try:
             db.execute(text("INSERT INTO reviews (user_id, book_id, rating, comment) VALUES (:user_id, :book_id, :rating, :comment)"),{"user_id": session["user_id"], "book_id": bookid, "rating":user_rating, "comment": user_comment})
-        except Exception as e:
-            return render_template("error.html", message=e)
+        except Exception:
+            return render_template("error.html", message="An error occurred while submitting your review.")
 
         db.commit()
         return redirect(url_for("details", bookid=bookid))
@@ -212,25 +212,31 @@ def api(isbn):
     # Make sure ISBN exists in the database
     try:
         book = db.execute(text("SELECT * from books WHERE isbn = :isbn"), {"isbn": isbn}).fetchone()
-    except Exception as e:
-        return render_template("error.html", message=e)
+    except Exception:
+        return render_template("error.html", message="An error occurred while querying the database.")
     if book is None:
         return jsonify({"error": "Not Found"}), 404
-    # Get GoodReads API datad
-    goodreads2  = goodreads = requests.get("https://openlibrary.org/api/books?bibkeys=ISBN:1857231082&jscmd=details&format=json")
-    key1 = goodreads2 .json()["ISBN:1857231082"]["details"]['works'][0]['key']
-    goodreads3 = requests.get(
-        f"https://openlibrary.org/{key1}/ratings.json"
-    ).json()
-    goodreads_book = goodreads3["summary"]
+    # Get OpenLibrary API data
+    try:
+        openlib = requests.get(f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&jscmd=details&format=json")
+        book_key = f"ISBN:{isbn}"
+        if book_key in openlib.json() and 'works' in openlib.json()[book_key]["details"]:
+            work_key = openlib.json()[book_key]["details"]['works'][0]['key']
+            openlib_ratings = requests.get(f"https://openlibrary.org/{work_key}/ratings.json").json()
+            summary = openlib_ratings.get("summary", {"average": None, "count": 0})
+        else:
+            summary = {"average": None, "count": 0}
+    except Exception:
+        summary = {"average": None, "count": 0}
+
     # Return book details in JSON
     return jsonify({
             "title": book.title,
             "author": book.author,
             "year": book.year,
             "isbn": book.isbn,
-            "average": goodreads_book["average"],
-            "count": goodreads_book["count"]
+            "average": summary.get("average"),
+            "count": summary.get("count")
           })
 if __name__ == "__main__":
     app.run()
