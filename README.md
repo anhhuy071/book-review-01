@@ -1,53 +1,129 @@
-# Book Reviews
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+# 📚 Book Reviews Website
 
-## Overview
+A Flask web application that lets users search 5,000 books, leave reviews, and read reviews from others. Book ratings from [Goodreads](https://www.goodreads.com) are also displayed on each book's page.
 
-This web site features 5000 hand picked books allowing users to search, leave reviews for individual books, and see the reviews made by other people. It also uses a third-party API by Goodreads.com, another book review website, to pull ratings from a broader audience. In addition, users are able to query for book details and book reviews programmatically via website's API. 
+---
 
-# Installation
+## ✨ Features
 
-## Installation via Docker (Recommended)
-This project is fully containerized. You only need [Docker Desktop](https://www.docker.com/products/docker-desktop) installed on your machine.
+| Feature | Description |
+|---|---|
+| 🔐 Registration & Login | Secure user authentication with session management |
+| 🔍 Search | Search books by title, author, or ISBN (partial match supported) |
+| 📖 Book Page | View book details, publication year, ISBN, and user reviews |
+| ⭐ Review Submission | Rate books from 1–5 stars and leave a written review (one per book per user) |
+| 🌐 Goodreads Integration | Displays Goodreads average rating and total ratings count |
+| 🔌 REST API | Query book details programmatically via `/api/<isbn>` |
 
-1. Clone the repository and navigate into the project directory.
-2. Open your terminal and run the following command to start both the Web App and the Database:
-   ```bash
-   docker compose up -d --build
-   ```
-   *(Note: The database tables will be automatically created on the first run).*
-3. To populate the database with 5000 books from `books.csv`, run:
-   ```bash
-   docker compose exec web python import.py
-   ```
-4. Access the web application at `http://localhost:5000`.
+---
 
-## Manual Installation (Legacy)
-If you prefer not to use Docker, ensure you have PostgreSQL and Python installed:
-1. Run `uv pip install -r requirements.txt` (or `pip install -r requirements.txt`).
-2. Set the environment variables in a `.env` file or export them (`FLASK_APP=application.py`, `DATABASE_URL=...`).
-3. Run `tables.sql` against your database manually.
-4. Run `python import.py` to import books.
-5. Execute `flask run` to start the server.
+## 🛠️ Tech Stack
 
-# Features of the applications
+- **Backend:** Python, Flask, SQLAlchemy
+- **Database:** PostgreSQL
+- **Frontend:** Jinja2 templates
+- **Deployment:** Docker, Gunicorn
 
-* *Registration*: Users are be able to register.
-* *Login*: Users, once registered, should be able to log in to the website with their username and password.
-* *Logout*: Logged in users should be able to log out of the site.
-* *Search*: Once a user has logged in, they are taken to a page where they can search for a book. Users should be able to type in the ISBN number of a book, the title of a book, or the author of a book. After performing the search, the website displays a list of possible matching results, or some sort of message if there were no matches. If the user typed in only part of a title, ISBN, or author name, search page should find matches for those as well!
-* *Book Page*: When users click on a book details from the results of the search page, they are taken to a book page, with details about the book: its title, author, publication year, ISBN number, and any reviews that users have left for the book on the website.
-* *Review Submission*: On the book page, users are be able to submit a review: consisting of a rating on a scale of 1 to 5, as well as a text component to the review where the user can write their opinion about a book. Users won't be able to submit multiple reviews for the same book.
-* *Goodreads Review Data*: On the book details page, users are able to see the average rating and number of ratings the work has received from Goodreads.
+---
 
-# API Access
+## 🚀 Installation
 
-Book Reviews API allows developers access to Book Reviews data in order to help other websites or applications that deal with books be more personalized, social and engaging.
+### Option 1: Docker (Recommended)
 
-## API methods
+The easiest way to run the project. Only requires [Docker Desktop](https://www.docker.com/products/docker-desktop).
 
-`/api/<isbn>` - where `<isbn>` is a 10 digit ISBN number. This GET request returns a JSON response containing the book's title, author, publication date, ISBN number, review count, and average score. Example format:
-``` json
+**1. Clone the repository:**
+```bash
+git clone <your-repo-url>
+cd Book-review-website
+```
+
+**2. Copy and configure your environment file:**
+```bash
+cp .env.example .env
+```
+Edit `.env` with your preferred credentials (passwords, etc.).
+
+**3. Start all services (Web App + Database + pgAdmin):**
+```bash
+docker-compose up -d --build
+```
+> The database tables are created automatically on the first run via `tables.sql`.
+
+**4. Import 5,000 books into the database:**
+```bash
+docker-compose exec web python import.py
+```
+
+**5. Access the app:**
+- 🌐 Web App: `http://localhost:5000`
+- 🗄️ pgAdmin (DB GUI): `http://localhost:5050`
+  - Email: `admin@admin.com` | Password: `admin`
+  - Connect to server: host `db`, port `5432`, user `postgres`
+
+---
+
+### Option 2: Local Development (Flask + Docker DB)
+
+Run Flask locally while the database runs in Docker.
+
+**1. Install dependencies** (using `uv` or `pip`):
+```bash
+pip install -r requirements.txt
+```
+
+**2. Configure `.env`:**
+```bash
+cp .env.example .env
+```
+Make sure `DB_HOST=localhost` in your `.env` file.
+
+**3. Start only the database container:**
+```bash
+docker-compose up -d db
+```
+
+**4. Import books:**
+```bash
+python import.py
+```
+
+**5. Run the Flask development server:**
+```bash
+flask run
+```
+
+Access the app at `http://localhost:5000`.
+
+---
+
+## ⚙️ Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values. **Never commit `.env` to git.**
+
+| Variable | Description | Default |
+|---|---|---|
+| `FLASK_APP` | Flask app entry point | `application.py` |
+| `FLASK_DEBUG` | Enable debug mode | `1` |
+| `DB_USER` | PostgreSQL username | `postgres` |
+| `DB_PASSWORD` | PostgreSQL password | *(set your own)* |
+| `DB_NAME` | Database name | `book_review` |
+| `DB_HOST` | DB host (`localhost` for local, `db` for Docker) | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DATABASE_URL` | Full connection string (auto-built from above) | — |
+| `PGADMIN_EMAIL` | pgAdmin login email | `admin@admin.com` |
+| `PGADMIN_PASSWORD` | pgAdmin login password | *(set your own)* |
+
+---
+
+## 🔌 REST API
+
+### `GET /api/<isbn>`
+
+Returns book details and review stats for a given 10-digit ISBN.
+
+**Example response:**
+```json
 {
     "title": "Memory",
     "author": "Doug Lloyd",
@@ -57,3 +133,14 @@ Book Reviews API allows developers access to Book Reviews data in order to help 
     "average_score": 5.0
 }
 ```
+
+---
+
+## 🗃️ Database Schema
+
+The database consists of three tables:
+- **Users** – stores registered user accounts
+- **Books** – stores 5,000 books (imported from `books.csv`)
+- **Reviews** – stores user reviews linked to users and books
+
+See `tables.sql` for the full schema, and `db-schema.png` for a visual diagram.
