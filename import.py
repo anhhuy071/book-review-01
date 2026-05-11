@@ -1,6 +1,7 @@
-import os,csv
+import os
+import csv
 
-from sqlalchemy import create_engine , text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from dotenv import load_dotenv
@@ -14,16 +15,25 @@ db = scoped_session(sessionmaker(bind=engine))
 
 
 def main():
-    f = open("books.csv", "r")  # needs to be opened during reading csv
-    reader = csv.reader(f)
-    next(reader)
-    for isbn, title, author, year in reader:
-        db.execute(
-            text("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)"),
-               {"isbn": isbn, "title": title, "author": author, "year": year})
+    """Import books from books.csv into the database (batch commit)."""
+    with open("books.csv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        next(reader)  # skip header row
+
+        count = 0
+        for isbn, title, author, year in reader:
+            db.execute(
+                text("INSERT INTO books (isbn, title, author, year) "
+                     "VALUES (:isbn, :title, :author, :year)"),
+                {"isbn": isbn, "title": title, "author": author, "year": year},
+            )
+            count += 1
+            if count % 500 == 0:
+                print(f"  … {count} books queued")
+
         db.commit()
-        print(f"Added book with ISBN: {isbn} Title: {title}  Author: {author}  Year: {year}")
+        print(f"Done — {count} books imported successfully.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

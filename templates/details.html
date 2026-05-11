@@ -1,81 +1,101 @@
 {% extends "layout.html" %}
 
-{% block title %} Details {% endblock %}
+{% block title %}{{ result.title }} — Book Reviews{% endblock %}
 
 {% block body %}
+<div class="page-content page-content--top">
   <div class="container">
-    <div class="row pt-4" id="details">
-        <div class="col-md-12">
-          <div class="row">
-            <div class="col-md-6 col-sm-12">
-              <div class="jumbotron">
-                <div class="container">
-                  <h1 class="display-4">Book Details</h1>
-                  <p class="lead">ISBN: {{result.isbn}} </p>
-                  <p class="lead">Title: {{result.title}}</p>
-                  <p class="lead">Author: {{result.author}}</p>
-                  <p class="lead">Year: {{result.year}}</p>
-                  <p class="lead">descriptions: {{descriptions}}</p>
-                </div>
-              </div>
-            </div>
+    <a href="{{ url_for('search') }}" class="back-to-search">← Back to search</a>
 
-            <div class="col-md-6 d-flex align-items-center">
-              <div class="list-group">
-                <img src="{{ cover }}" alt="logo" class="img-fluid mb-3">
-                <button type="button" class="btn btn-secondary mb-3">
-                  Đánh giá: <span class="badge badge-light">{{ openlib["average"] }}</span>
-                </button>
-                <button type="button" class="btn btn-secondary mb-3">
-                  Số người đánh giá: <span class="badge badge-light">{{ openlib["count"] }}</span>
-                </button>
-              </div>
+    <!-- Book Details -->
+    <div class="book-details">
+      <div>
+        {% if cover %}
+          <img src="{{ cover }}" alt="Cover of {{ result.title }}" class="book-cover" />
+        {% else %}
+          <div class="book-cover-placeholder">No cover available</div>
+        {% endif %}
+      </div>
 
-            </div>
+      <div class="book-meta">
+        <h1>{{ result.title }}</h1>
+        <p class="book-author">by {{ result.author }}</p>
+
+        <div class="book-info-grid">
+          <div class="info-item">
+            <span class="info-label">ISBN</span>
+            <span class="info-value">{{ result.isbn }}</span>
           </div>
-
-          <h3>Comments</h3>
-          {% for item in comment_list %}
-          <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title"><span class="badge badge-info">{{item.firstname}} {{item.lastname}}</span>
-              {% if item.rating == 5 %}
-                <span class="badge badge-success float-right">rated {{item.rating}}</span>
-              {% elif item.rating == 4 or item.rating == 3 %}
-                <span class="badge badge-warning float-right">rated {{item.rating}}</span>
-              {% elif item.rating == 2 or item.rating == 1 %}
-                <span class="badge badge-danger float-right">rated {{item.rating}}</span>
-              {% endif %}
-            </h5>
-            <h6 class="card-subtitle mb-2 text-muted"><span class="badge">@{{item.email}}</span></h6>
-            <p class="card-text mt-3 alert alert-info">{{item.comment}}</p>
+          <div class="info-item">
+            <span class="info-label">Year</span>
+            <span class="info-value">{{ result.year }}</span>
           </div>
+          <div class="info-item">
+            <span class="info-label">Rating</span>
+            <span class="info-value">{{ openlib["average"] or "—" }}</span>
           </div>
-          {% endfor %}
-          <hr>
-
-          <form action="{{url_for('details', bookid=bookid)}}" method="post">
-            <div class="form-group">
-               <label for="Rating">Rating</label>
-               <select class="form-control" id="Rating" name="rating">
-                 <option value="1">1</option>
-                 <option value="2">2</option>
-                 <option value="3">3</option>
-                 <option value="4">4</option>
-                 <option selected value="5">5</option>
-               </select>
-             </div>
-             <div class="form-group">
-               <label for="Comments">Comments</label>
-               <textarea class="form-control" id="Comments" rows="8" name="comments" required></textarea>
-             </div>
-             <div class="form-group">
-                <button type="submit" class="btn btn-default">Post</button>
-             </div>
-          </form>
         </div>
-        <div class="col-md-4">
 
+        <div class="openlib-stats">
+          <span class="stat-chip">
+            <strong>{{ openlib["count"] }}</strong> ratings on OpenLibrary
+          </span>
         </div>
+
+        {% if descriptions %}
+        <p class="book-description" style="margin-top:var(--space-lg);">{{ descriptions }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="comments-section">
+      <h3>Reviews ({{ comment_list|length }})</h3>
+
+      {% if comment_list|length == 0 %}
+        <p>No reviews yet. Be the first to share your thoughts!</p>
+      {% endif %}
+
+      {% for item in comment_list %}
+      <div class="comment-card">
+        <div class="comment-header">
+            <span class="comment-author">{{ item.firstname }} {{ item.lastname[0] }}.</span>
+          {% if item.rating == 5 %}
+            <span class="rating-badge rating-badge--high">★ {{ item.rating }}</span>
+          {% elif item.rating >= 3 %}
+            <span class="rating-badge rating-badge--mid">★ {{ item.rating }}</span>
+          {% else %}
+            <span class="rating-badge rating-badge--low">★ {{ item.rating }}</span>
+          {% endif %}
+        </div>
+        <p class="comment-text">{{ item.comment }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Review Form -->
+    <div class="review-form">
+      <h3>Write a Review</h3>
+      <form action="{{ url_for('details', bookid=bookid) }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label for="review-rating">Rating</label>
+          <select class="form-control" id="review-rating" name="rating">
+            <option value="5" selected>5 — Excellent</option>
+            <option value="4">4 — Good</option>
+            <option value="3">3 — Average</option>
+            <option value="2">2 — Poor</option>
+            <option value="1">1 — Terrible</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="review-comments">Your Review</label>
+          <textarea class="form-control" id="review-comments" name="comments" placeholder="Share your thoughts about this book…" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Review</button>
+      </form>
+    </div>
+
   </div>
+</div>
 {% endblock %}

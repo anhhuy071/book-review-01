@@ -1,21 +1,14 @@
 {% extends "layout.html" %}
 
-{% block title %} Home Page {% endblock %}
+{% block title %}Book Reviews — Discover Your Next Read{% endblock %}
 
 {% block body %}
-
-<div class="container">
-  <div class="row">
-    <div class="col align-self-center my-5 color-white">
-        <div class="container">
-          <h1 class="display-2">Book Reviews</h1>
-          <p class="lead">Here you can find your favourite books by their detail info such as ISBN, year, author, etc. You can see the rating for the book you desire after you logged in here.</p>
-          <p></p>
-          <p class="lead">
-            <a class="btn btn-lg btn-default" href="{{url_for("login")}}" role="button">Login</a>
-        </div>
-    </div>
-    <div class="col">
+<div class="page-content">
+  <div class="container">
+    <div class="hero">
+      <h1>Discover &amp; Review<br/>Your Favourite Books</h1>
+      <p>Search by ISBN, title, or author. Read honest reviews from fellow readers and share your own thoughts on the books you love.</p>
+      <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}">Get Started</a>
     </div>
   </div>
 </div>

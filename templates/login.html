@@ -1,37 +1,33 @@
 {% extends "layout.html" %}
 
-{% block title %} Login {% endblock %}
+{% block title %}Login — Book Reviews{% endblock %}
 
 {% block body %}
+<div class="page-content">
+  <div class="container" style="display:flex;justify-content:center;">
+    <div class="form-card">
+      <h2>Welcome back</h2>
+      <p class="form-subtitle">Sign in to access your account</p>
 
-<div class="container">
-    <div class="row">
-        <div class="col-6">
-            <div class="login-form">
-              <h4 class="card-title mb-4 mt-1 title">Login</h4>
-                    <form action="/login" method="post">
-                    <div class="form-group">
-                      <label>Your email</label>
-                        <input name="email" class="form-control" placeholder="Email" type="email" required>
-                    </div> <!-- form-group// -->
-                    <div class="form-group">
-                      <label>Your password</label>
-                        <input name="password" class="form-control" placeholder="******" type="password" required>
-                    </div> <!-- form-group// -->
-                    <div class="form-group">
-                    </div> <!-- form-group// -->
-                    <div class="form-group">
-                        <button type="submit" class="btn submit"> Login  </button>
-                    </div> <!-- form-group// -->
-                    <p class="text-center"><a href="{{url_for("register")}}" class="">Don't have an account?</a></p>
-                  </form>
-              </div>
+      <form action="/login" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" class="form-control" type="email" placeholder="you@example.com" required />
         </div>
-        <div class="col-6"><!--image--></div>
+
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input id="login-password" name="password" class="form-control" type="password" placeholder="••••••••" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
+      </form>
+
+      <div class="form-footer">
+        Don't have an account? <a href="{{ url_for('register') }}">Sign up</a>
+      </div>
     </div>
+  </div>
 </div>
-
-
-
-
 {% endblock %}

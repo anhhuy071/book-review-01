@@ -1,35 +1,37 @@
 {% extends "layout.html" %}
 
-{% block title %}List{% endblock %}
+{% block title %}Search Results — Book Reviews{% endblock %}
 
 {% block body %}
-<div class="container">
-  <div class="row">
-    <div class="col-md-6 col-sm-12 mt-5">
-      <table class="table .list">
+<div class="page-content page-content--top">
+  <div class="container">
+    <a href="{{ url_for('search') }}" class="back-to-search">← Back to search</a>
+
+    <div class="results-header">
+      <h2>Search Results</h2>
+      <span class="results-count">{{ result|length }} book{{ 's' if result|length != 1 else '' }} found</span>
+    </div>
+
+    <table class="results-table">
       <thead>
         <tr>
-          <th scope="col">ISBN</th>
-          <th scope="col">Title</th>
-          <th scope="col">Author</th>
+          <th>ISBN</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for item in result %}
         <tr>
-          <td>{{item.isbn}}</td>
-          <td>{{item.title}}</td>
-          <td>{{item.author}}</td>
-          <td><a href= "details/{{item.bookid}}">Details</a></td>
+          <td><span class="book-isbn">{{ item.isbn }}</span></td>
+          <td><span class="book-title">{{ item.title }}</span></td>
+          <td>{{ item.author }}</td>
+          <td><a href="{{ url_for('details', bookid=item.bookid) }}" class="details-link">View →</a></td>
         </tr>
         {% endfor %}
       </tbody>
-      </table>
-    </div>
-    {% endblock %}
-
-    </div>
-    <div class="col-md-6 col-sm-0">
-
-    </div>
+    </table>
   </div>
+</div>
+{% endblock %}
