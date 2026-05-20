@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+.env
+.tmp
+__pycache__
+*.py[cod]
+flask_session
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.vscode
+.agents
+pgadmin

@@ -36,8 +36,9 @@ This is a Flask book review app backed by PostgreSQL. The normal development flo
 1. Check existing tools first.
 2. Prefer `uv run ...` for host-side Python commands.
 3. Use `docker-compose.dev.yml` for local PostgreSQL/pgAdmin and `docker-compose.yml` for full-stack checks.
-4. When something breaks, read the error, fix the tool or workflow, test it, then update the directive.
-5. Do not commit secrets, local sessions, virtual environments, cache files, or `.tmp/` outputs.
+4. Run one Compose stack at a time unless the ports/container names are intentionally changed.
+5. When something breaks, read the error, fix the tool or workflow, test it, then update the directive.
+6. Do not commit secrets, local sessions, virtual environments, cache files, or `.tmp/` outputs.
 
 ## Important Project Files
 
@@ -78,7 +79,7 @@ uv run python import.py
 Run Flask locally:
 
 ```powershell
-uv run flask --app application --debug run
+uv run flask run
 ```
 
 Generate sample reviews:
@@ -87,10 +88,25 @@ Generate sample reviews:
 uv run python execution/crawl_reviews.py --limit 5
 ```
 
+Run the full Docker stack:
+
+```powershell
+docker-compose up -d --build
+```
+
+Stop both possible Docker stacks:
+
+```powershell
+docker-compose down
+docker-compose -f docker-compose.dev.yml down
+```
+
 ## Environment Notes
 
 - For host-side Flask, `.env` should use `DB_HOST=localhost` and DB port `5432`.
+- `FLASK_APP=application` and `FLASK_DEBUG=1` in `.env` allow `uv run flask run` instead of passing `--app` and `--debug`.
 - For the Docker web container, `.env` should use `DB_HOST=db`.
+- `docker-compose.dev.yml` and `docker-compose.yml` both publish PostgreSQL on `5432` and pgAdmin on `5050`, so stop one stack before starting the other.
 - `DATABASE_URL` is required by `application.py` and `import.py`.
 - `flask_session/`, `__pycache__/`, `.venv/`, `.env`, and `.tmp/` should stay out of git.
 

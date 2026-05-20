@@ -67,8 +67,10 @@ uv run python import.py
 ### 5. Run Flask
 
 ```powershell
-uv run flask --app application --debug run
+uv run flask run
 ```
+
+`FLASK_APP=application` and `FLASK_DEBUG=1` from `.env` make the shorter command work.
 
 Open `http://localhost:5000`.
 
@@ -77,6 +79,7 @@ Open `http://localhost:5000`.
 Use this when checking the containerized app:
 
 ```powershell
+docker-compose -f docker-compose.dev.yml down
 docker-compose up -d --build
 docker-compose exec web python import.py
 ```
@@ -86,6 +89,21 @@ For this mode, `.env` must use the Docker service name:
 ```env
 DB_HOST=db
 DATABASE_URL=postgresql://postgres:postgres@db:5432/book_review
+```
+
+Switch back to host-side Flask by stopping the full stack, starting the dev stack, and running Flask with `uv`:
+
+```powershell
+docker-compose down
+docker-compose -f docker-compose.dev.yml up -d
+uv run flask run
+```
+
+Stop all Docker services from either workflow:
+
+```powershell
+docker-compose down
+docker-compose -f docker-compose.dev.yml down
 ```
 
 ## Outputs
@@ -98,6 +116,7 @@ DATABASE_URL=postgresql://postgres:postgres@db:5432/book_review
 ## Edge Cases
 
 - If `DATABASE_URL` is missing, `application.py` and `import.py` raise `RuntimeError`.
+- `docker-compose.dev.yml` and `docker-compose.yml` both publish PostgreSQL on `5432` and pgAdmin on `5050`; stop one stack before starting the other.
 - If port `5432` is already in use, change the PostgreSQL port mapping in `docker-compose.dev.yml` and update `DATABASE_URL`.
 - If `DB_HOST=db` is used while Flask runs on the host, the app cannot reach the database. Use `localhost` for host-side Flask.
 - If `import.py` is run twice, the `books.isbn` unique constraint can fail. Reset the DB volume or make the importer idempotent before repeated imports.

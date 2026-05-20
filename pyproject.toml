@@ -24,7 +24,6 @@ dependencies = [
     "markupsafe==3.0.3",
     "msgspec==0.21.1",
     "packaging==26.2",
-    "psycopg2>=2.9.12",
     "psycopg2-binary==2.9.12",
     "python-dotenv==1.2.2",
     "requests==2.33.1",

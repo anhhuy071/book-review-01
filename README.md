@@ -74,14 +74,22 @@ uv run python import.py
 ### 6. Run Flask with hot reload
 
 ```powershell
-uv run flask --app application --debug run
+uv run flask run
 ```
+
+`FLASK_APP=application` and `FLASK_DEBUG=1` from `.env` make the shorter command work.
 
 Open `http://localhost:5000`.
 
 ## Full Docker Run
 
 Use this when you want the web app, PostgreSQL, and pgAdmin running together in containers.
+
+Stop the dev stack first if it is already running:
+
+```powershell
+docker-compose -f docker-compose.dev.yml down
+```
 
 For the Docker web container, `.env` should use the Docker service hostname:
 
@@ -108,6 +116,25 @@ Access:
 - pgAdmin: `http://localhost:5050`
 - pgAdmin database host: `db`
 - PostgreSQL port inside Docker: `5432`
+
+## Switching Docker Workflows
+
+Use only one Compose workflow at a time because both files publish PostgreSQL on `5432` and pgAdmin on `5050`.
+
+Switch from full Docker back to local Flask development:
+
+```powershell
+docker-compose down
+docker-compose -f docker-compose.dev.yml up -d
+uv run flask run
+```
+
+Stop everything from both workflows:
+
+```powershell
+docker-compose down
+docker-compose -f docker-compose.dev.yml down
+```
 
 ## Environment Variables
 
@@ -144,6 +171,7 @@ uv run python execution/crawl_reviews.py --limit 5
 Stop Docker services:
 
 ```powershell
+docker-compose down
 docker-compose -f docker-compose.dev.yml down
 ```
 
