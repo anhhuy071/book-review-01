@@ -1,14 +1,36 @@
 # Execution Scripts
 
-Deterministic Python scripts that handle the actual work for the Book Review Website.
+Execution scripts are deterministic tools used by directives. Keep repeatable logic here instead of doing multi-step data work manually.
+
+## Current Scripts
+
+| Script | Purpose |
+|---|---|
+| `crawl_reviews.py` | Creates a bot user and inserts sample reviews for imported books |
+
+The book importer currently lives at the project root as `import.py` because the original app expects `books.csv` beside it.
+
+## Run Commands
+
+From the project root:
+
+```powershell
+uv run python execution/crawl_reviews.py --limit 5
+```
+
+Root importer:
+
+```powershell
+uv run python import.py
+```
 
 ## Principles
 
-- Each script does **one thing well**
-- All scripts are **well-commented** and **testable**
-- Environment variables and secrets come from `.env`
-- Scripts should handle errors gracefully and return clear exit codes
+- Scripts should read secrets and connection settings from `.env`.
+- Scripts should fail clearly when required environment variables are missing.
+- Scripts should be safe to run in small batches first.
+- Update the matching directive whenever script behavior, arguments, or edge cases change.
 
 ## Naming Convention
 
-Use snake_case: `import_books.py`, `setup_db.py`, `seed_data.py`
+Use snake_case names such as `crawl_reviews.py` or `seed_reviews.py`.

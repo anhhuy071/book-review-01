@@ -1,78 +1,99 @@
 # Agent Instructions
 
-> This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
+> This file is mirrored across `CLAUDE.md`, `AGENTS.md`, and `GEMINI.md` so the same instructions load in any AI environment.
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
- 
+## Project Context
+
+This is a Flask book review app backed by PostgreSQL. The normal development flow is:
+
+- Run Python locally with `uv`.
+- Run PostgreSQL/pgAdmin with `docker-compose.dev.yml`.
+- Use `docker-compose.yml` for full-stack container checks.
+- Keep deterministic task logic in scripts, and keep task instructions in directives.
+
 ## The 3-Layer Architecture
 
-**Layer 1: Directive (What to do)**
+### Layer 1: Directive
 
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+- SOPs live in `directives/`.
+- They define goals, inputs, tools/scripts, outputs, and edge cases.
+- Read the relevant directive before doing repeatable project work.
 
-**Layer 2: Orchestration (Decision making)**
+### Layer 2: Orchestration
 
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+- This is the AI agent layer.
+- Route the task, choose the right script, inspect errors, and decide the next step.
+- Do not manually reimplement logic that already exists in `execution/` or root project scripts.
 
-**Layer 3: Execution (Doing the work)**
+### Layer 3: Execution
 
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work. Commented well.
-
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+- Deterministic scripts live in `execution/`.
+- The current root importer is `import.py`.
+- Scripts read configuration from `.env` and should be tested after changes.
 
 ## Operating Principles
 
-**1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+1. Check existing tools first.
+2. Prefer `uv run ...` for host-side Python commands.
+3. Use `docker-compose.dev.yml` for local PostgreSQL/pgAdmin and `docker-compose.yml` for full-stack checks.
+4. When something breaks, read the error, fix the tool or workflow, test it, then update the directive.
+5. Do not commit secrets, local sessions, virtual environments, cache files, or `.tmp/` outputs.
 
-**2. Self-anneal when things break**
+## Important Project Files
 
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+- `application.py`: Flask app and routes
+- `pyproject.toml`: Python project metadata and dependencies
+- `uv.lock`: locked Python dependency graph
+- `requirements.txt`: dependency export used by the current Dockerfile
+- `docker-compose.dev.yml`: local PostgreSQL and pgAdmin services
+- `docker-compose.yml`: full-stack container check
+- `Dockerfile`: production-style web image
+- `tables.sql`: database schema
+- `books.csv`: seed book data
+- `import.py`: imports books into PostgreSQL
+- `execution/crawl_reviews.py`: inserts sample bot reviews
+- `directives/`: SOPs for common project tasks
+- `.tmp/`: regenerated intermediate files only
 
-**3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+## Common Commands
 
-## Self-annealing loop
+Install dependencies:
 
-Errors are learning opportunities. When something breaks:
+```powershell
+uv sync
+```
 
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
+Start the database:
 
-## File Organization
+```powershell
+docker-compose -f docker-compose.dev.yml up -d
+```
 
-**Deliverables vs Intermediates:**
+Import books:
 
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
+```powershell
+uv run python import.py
+```
 
-**Directory structure:**
+Run Flask locally:
 
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
+```powershell
+uv run flask --app application --debug run
+```
 
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
+Generate sample reviews:
+
+```powershell
+uv run python execution/crawl_reviews.py --limit 5
+```
+
+## Environment Notes
+
+- For host-side Flask, `.env` should use `DB_HOST=localhost` and DB port `5432`.
+- For the Docker web container, `.env` should use `DB_HOST=db`.
+- `DATABASE_URL` is required by `application.py` and `import.py`.
+- `flask_session/`, `__pycache__/`, `.venv/`, `.env`, and `.tmp/` should stay out of git.
 
 ## Summary
 
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
-
-
+Be pragmatic and reliable: read the directive, use the script, test the result, and update the docs when the workflow changes.
