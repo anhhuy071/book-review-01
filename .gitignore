@@ -172,3 +172,5 @@ flask_session
 
 # Agent architecture intermediate files
 .tmp/
+credentials.json
+token.json

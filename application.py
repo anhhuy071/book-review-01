@@ -39,11 +39,10 @@ db = scoped_session(sessionmaker(bind=engine))
 # --------------------------------------------------------------------------- #
 
 def login_required(f):
-    """Redirect to login if user is not authenticated."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("email") is None:
-            flash("Please log in to access this page.", "warning")
+            flash("Please log in to access this function.", "warning")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
@@ -135,9 +134,6 @@ def fetch_openlib_data(isbn):
 
 @app.route("/")
 def index():
-    # Logged-in users go straight to search
-    if session.get("email") is not None:
-        return redirect(url_for("search"))
     return render_template("index.html")
 
 
@@ -257,7 +253,6 @@ def logout():
 
 
 @app.route("/search", methods=["GET", "POST"])
-@login_required
 def search():
     if request.method == "GET":
         return render_template("search.html")
@@ -286,7 +281,6 @@ def search():
 
 
 @app.route("/details/<int:bookid>", methods=["GET", "POST"])
-@login_required
 def details(bookid):
     if request.method == "GET":
         # --- Fetch book ---
@@ -324,6 +318,10 @@ def details(bookid):
         )
 
     # --- POST: submit review ---
+    if "user_id" not in session:
+        flash("Please log in to submit a review.", "warning")
+        return redirect(url_for("login"))
+
     already = db.execute(
         text("SELECT 1 FROM reviews WHERE user_id = :uid AND book_id = :bid"),
         {"uid": session["user_id"], "bid": bookid},
@@ -368,7 +366,7 @@ def details(bookid):
 
 @app.route("/api/<string:isbn>")
 @csrf.exempt
-@login_required
+# @login_required
 def api(isbn):
     try:
         book = db.execute(

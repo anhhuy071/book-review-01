@@ -76,6 +76,7 @@
     <!-- Review Form -->
     <div class="review-form">
       <h3>Write a Review</h3>
+      {% if session.logged_in %}
       <form action="{{ url_for('details', bookid=bookid) }}" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
@@ -94,6 +95,9 @@
         </div>
         <button type="submit" class="btn btn-primary">Submit Review</button>
       </form>
+      {% else %}
+        <p>Please <a href="{{ url_for('login') }}">log in</a> to share your thoughts on this book.</p>
+      {% endif %}
     </div>
 
   </div>

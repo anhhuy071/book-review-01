@@ -63,39 +63,67 @@ docker-compose exec web python import.py
 
 ---
 
-### Option 2: Local Development (Flask + Docker DB)
+### Option 2: Local Development with uv (Flask + Docker DB)
 
 Run Flask locally while the database runs in Docker.
 
-**1. Install dependencies** (using `uv` or `pip`):
+**1. Install uv** (if you do not already have it):
 ```bash
-pip install -r requirements.txt
+pip install uv
 ```
 
-**2. Configure `.env`:**
+**2. Create a virtual environment and install dependencies:**
+```bash
+uv pip install -r requirements.txt
+```
+
+**3. Configure `.env`:**
 ```bash
 cp .env.example .env
 ```
 Make sure `DB_HOST=localhost` in your `.env` file.
 
-**3. Start only the database container:**
+**4. Start only the database container:**
 ```bash
 docker-compose up -d db
 ```
 
-**4. Import books:**
+**5. Import books:**
 ```bash
-python import.py
+uv run python import.py
 ```
 
-**5. Run the Flask development server:**
+**6. Run the Flask development server:**
 ```bash
-flask run
+uv run flask run
 ```
 
 Access the app at `http://localhost:5000`.
 
 ---
+
+### Local development with hot reload
+
+Run Flask locally with the automatic reloader (templates and code will reload on change).
+
+- PowerShell (Windows):
+```powershell
+& .venv\Scripts\Activate.ps1
+./run_dev.ps1
+```
+
+- macOS / Linux:
+```bash
+source .venv/bin/activate
+./run_dev.sh
+```
+
+You can also run directly without the helper scripts:
+
+```bash
+python -m flask --app application --debug run --reload
+```
+
 
 ## ⚙️ Environment Variables
 
