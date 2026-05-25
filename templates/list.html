@@ -8,30 +8,77 @@
     <a href="{{ url_for('search') }}" class="back-to-search">← Back to search</a>
 
     <div class="results-header">
-      <h2>Search Results</h2>
-      <span class="results-count">{{ result|length }} book{{ 's' if result|length != 1 else '' }} found</span>
+      <div>
+        <h2>Search Results</h2>
+        <span class="results-count">
+          Showing {{ pagination.start }}-{{ pagination.end }} of {{ pagination.total }}
+          book{{ 's' if pagination.total != 1 else '' }} for "{{ query }}"
+        </span>
+      </div>
     </div>
 
-    <table class="results-table">
-      <thead>
-        <tr>
-          <th>ISBN</th>
-          <th>Title</th>
-          <th>Author</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in result %}
-        <tr>
-          <td><span class="book-isbn">{{ item.isbn }}</span></td>
-          <td><span class="book-title">{{ item.title }}</span></td>
-          <td>{{ item.author }}</td>
-          <td><a href="{{ url_for('details', bookid=item.bookid) }}" class="details-link">View →</a></td>
-        </tr>
+    <div class="results-table-wrap">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>ISBN</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in result %}
+          <tr>
+            <td><span class="book-isbn">{{ item.isbn }}</span></td>
+            <td><span class="book-title">{{ item.title }}</span></td>
+            <td>{{ item.author }}</td>
+            <td><a href="{{ url_for('details', bookid=item.bookid) }}" class="details-link">View →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.total_pages > 1 %}
+    <nav class="pagination" aria-label="Search results pagination">
+      {% if pagination.has_previous %}
+        <a class="pagination-link" href="{{ url_for('search', q=query, page=pagination.previous_page) }}">Previous</a>
+      {% else %}
+        <span class="pagination-link pagination-link--disabled">Previous</span>
+      {% endif %}
+
+      <div class="pagination-pages">
+        {% if pagination.pages.start > 1 %}
+          <a class="pagination-link pagination-link--number" href="{{ url_for('search', q=query, page=1) }}">1</a>
+          {% if pagination.pages.start > 2 %}
+            <span class="pagination-ellipsis">...</span>
+          {% endif %}
+        {% endif %}
+
+        {% for page_number in pagination.pages %}
+          {% if page_number == pagination.page %}
+            <span class="pagination-link pagination-link--number pagination-link--active" aria-current="page">{{ page_number }}</span>
+          {% else %}
+            <a class="pagination-link pagination-link--number" href="{{ url_for('search', q=query, page=page_number) }}">{{ page_number }}</a>
+          {% endif %}
         {% endfor %}
-      </tbody>
-    </table>
+
+        {% if pagination.pages.stop <= pagination.total_pages %}
+          {% if pagination.pages.stop < pagination.total_pages %}
+            <span class="pagination-ellipsis">...</span>
+          {% endif %}
+          <a class="pagination-link pagination-link--number" href="{{ url_for('search', q=query, page=pagination.total_pages) }}">{{ pagination.total_pages }}</a>
+        {% endif %}
+      </div>
+
+      {% if pagination.has_next %}
+        <a class="pagination-link" href="{{ url_for('search', q=query, page=pagination.next_page) }}">Next</a>
+      {% else %}
+        <span class="pagination-link pagination-link--disabled">Next</span>
+      {% endif %}
+    </nav>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

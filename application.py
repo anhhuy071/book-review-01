@@ -14,7 +14,7 @@ load_dotenv()
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
-
+BOOKS_PER_PAGE = 32
 # --------------------------------------------------------------------------- #
 #  Configuration
 # --------------------------------------------------------------------------- #
@@ -26,6 +26,7 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-fallback-change-in-produ
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
 
 # --------------------------------------------------------------------------- #
 #  Database
@@ -250,53 +251,103 @@ def logout():
     session.clear()
     flash("You have been logged out.", "info")
     return redirect(url_for("index"))
-
-
 @app.route("/search", methods=["GET", "POST"])
 def search():
-    if request.method == "GET":
+    if request.method == "POST":
+        query = request.form.get("input-search", "").strip()
+        if not query:
+            flash("Search field cannot be empty.", "error")
+            return redirect(url_for("search"))
+        return redirect(url_for("search", q=query, page=1))
+
+    query = request.args.get("q", "").strip()
+    if not query:
         return render_template("search.html")
 
-    query = request.form.get("input-search", "").strip()
-    if not query:
-        flash("Search field cannot be empty.", "error")
-        return redirect(url_for("search"))
+    page = request.args.get("page", 1, type=int) or 1
+    page = max(page, 1)
+    offset = (page - 1) * BOOKS_PER_PAGE
+    query_pattern = f"%{query.lower()}%"
+    where_clause = (
+        "LOWER(isbn) LIKE :query "
+        "OR LOWER(title) LIKE :query "
+        "OR LOWER(author) LIKE :query"
+    )
 
     try:
+        total = db.execute(
+            text(f"SELECT COUNT(*) FROM books WHERE {where_clause}"),
+            {"query": query_pattern},
+        ).scalar_one()
+
+        if total == 0:
+            flash("No books found matching your search.", "warning")
+            return redirect(url_for("search"))
+
+        total_pages = (total + BOOKS_PER_PAGE - 1) // BOOKS_PER_PAGE
+        if page > total_pages:
+            return redirect(url_for("search", q=query, page=total_pages))
+
         result = db.execute(
-            text("SELECT * FROM books WHERE LOWER(isbn) LIKE :query "
-                 "OR LOWER(title) LIKE :query OR LOWER(author) LIKE :query"),
-            {"query": f"%{query.lower()}%"},
+            text(
+                f"SELECT * FROM books WHERE {where_clause} "
+                "ORDER BY title ASC, bookid ASC "
+                "LIMIT :limit OFFSET :offset"
+            ),
+            {
+                "query": query_pattern,
+                "limit": BOOKS_PER_PAGE,
+                "offset": offset,
+            },
         ).fetchall()
     except Exception as e:
         app.logger.error(f"Search error: {e}")
         flash("An error occurred while searching. Please try again.", "error")
         return redirect(url_for("search"))
 
-    if not result:
-        flash("No books found matching your search.", "warning")
-        return redirect(url_for("search"))
+    pagination = {
+        "page": page,
+        "per_page": BOOKS_PER_PAGE,
+        "total": total,
+        "total_pages": total_pages,
+        "start": offset + 1,
+        "end": min(offset + BOOKS_PER_PAGE, total),
+        "has_previous": page > 1,
+        "has_next": page < total_pages,
+        "previous_page": page - 1,
+        "next_page": page + 1,
+        "pages": range(max(1, page - 2), min(total_pages + 1, page + 3)),
+    }
 
-    return render_template("list.html", result=result)
+    return render_template(
+        "list.html",
+        result=result,
+        query=query,
+        pagination=pagination,
+    )
 
 
 @app.route("/details/<int:bookid>", methods=["GET", "POST"])
 def details(bookid):
+    # --- Fetch book from database ---
+    result = db.execute(
+        text("SELECT * FROM books WHERE bookid = :bookid"),
+        {"bookid": bookid},
+    ).fetchone()
+
+    if not result:
+        flash("Book not found.", "error")
+        return redirect(url_for("search"))
+
     if request.method == "GET":
-        # --- Fetch book ---
-        result = db.execute(
-            text("SELECT * FROM books WHERE bookid = :bookid"),
-            {"bookid": bookid},
-        ).fetchone()
-
-        if not result:
-            flash("Book not found.", "error")
-            return redirect(url_for("search"))
-
-        # --- External data (resilient) ---
+        # --- Fetch OpenLibrary data for cover, rating, description ---
         openlib = fetch_openlib_data(result.isbn)
+        
+        # --- Fetch Gutenberg reading link if mapping exists ---
+        read_url = None
+        cover_image = openlib.get("cover")
 
-        # --- Reviews ---
+        # --- Fetch Reviews ---
         comment_list = db.execute(
             text("SELECT u.firstname, u.lastname, r.rating, r.comment "
                  "FROM reviews r JOIN users u ON u.userid = r.user_id "
@@ -313,8 +364,9 @@ def details(bookid):
                 "average": openlib["rating_average"],
                 "count":   openlib["rating_count"],
             },
-            cover=openlib["cover"],
+            cover=cover_image,
             descriptions=openlib["description"],
+            read_url=read_url
         )
 
     # --- POST: submit review ---
@@ -392,9 +444,6 @@ def api(isbn):
     })
 
 
-# --------------------------------------------------------------------------- #
-#  Entry point
-# --------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
     app.run(debug=os.getenv("FLASK_DEBUG", "0") == "1")

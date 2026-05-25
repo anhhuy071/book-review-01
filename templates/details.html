@@ -48,6 +48,19 @@
       </div>
     </div>
 
+    <!-- Read Online Section -->
+    {% if read_url %}
+    <div class="read-online-section" style="margin-top:var(--space-xl); margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-card); border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-md);">
+        <h3 style="margin:0;">📖 Read Online</h3>
+        <a href="{{ read_url }}" target="_blank" class="btn btn-primary" style="padding:0.5rem 1rem; font-size:0.9rem; text-decoration:none;">Open in New Tab ↗</a>
+      </div>
+      <div class="reader-container" style="position:relative; width:100%; height:600px; border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; background:#fff;">
+        <iframe src="{{ read_url }}" style="width:100%; height:100%; border:none;"></iframe>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Comments Section -->
     <div class="comments-section">
       <h3>Reviews ({{ comment_list|length }})</h3>

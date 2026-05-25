@@ -7,9 +7,8 @@
   <div class="container" style="display:flex;justify-content:center;">
     <div class="search-section">
       <h2>Search for a Book</h2>
-      <form class="search-bar" action="{{ url_for('search') }}" method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input name="input-search" class="form-control" type="search" placeholder="Enter ISBN, title, or author…" required />
+      <form class="search-bar" action="{{ url_for('search') }}" method="get">
+        <input name="q" class="form-control" type="search" placeholder="Enter ISBN, title, or author…" required />
         <button type="submit" class="btn btn-primary">Search</button>
       </form>
     </div>
